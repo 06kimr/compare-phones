@@ -18,33 +18,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useRouter, useSearchParams } from "next/navigation";
 
-const frameworks = [
-  {
-    value: "next.js",
-    label: "Next.js",
-  },
-  {
-    value: "sveltekit",
-    label: "SvelteKit",
-  },
-  {
-    value: "nuxt.js",
-    label: "Nuxt.js",
-  },
-  {
-    value: "remix",
-    label: "Remix",
-  },
-  {
-    value: "astro",
-    label: "Astro",
-  },
-];
-
-export function PhoneCombobox({ className }: { className: string }) {
+export function PhoneCombobox({
+  className,
+  order,
+  options,
+  selectedValue,
+}: {
+  className: string;
+  order: "primary" | "secondary";
+  options: { label: string; value: string }[];
+  selectedValue: string;
+}) {
   const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState("");
+  const [value, setValue] = React.useState(selectedValue);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -56,33 +46,36 @@ export function PhoneCombobox({ className }: { className: string }) {
           className={cn("w-full justify-between", className)}
         >
           {value
-            ? frameworks.find((framework) => framework.value === value)?.label
+            ? options.find((option) => option.value === value)?.label
             : "Select framework..."}
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">
-      <Command>
+        <Command>
           <CommandInput placeholder="Search framework..." />
           <CommandList>
             <CommandEmpty>No framework found.</CommandEmpty>
             <CommandGroup>
-              {frameworks.map((framework) => (
+              {options.map((option) => (
                 <CommandItem
-                  key={framework.value}
-                  value={framework.value}
+                  key={option.value}
+                  value={option.value}
                   onSelect={(currentValue) => {
-                    setValue(currentValue === value ? "" : currentValue)
-                    setOpen(false)
+                    setValue(currentValue === value ? "" : currentValue);
+                    setOpen(false);
+                    const newSearchParams = new URLSearchParams(searchParams);
+                    newSearchParams.set(order, currentValue);
+                    router.push(`?${newSearchParams.toString()}`);
                   }}
                 >
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === framework.value ? "opacity-100" : "opacity-0"
+                      value === option.value ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {framework.label}
+                  {option.label}
                 </CommandItem>
               ))}
             </CommandGroup>
