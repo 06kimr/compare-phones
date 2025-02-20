@@ -14,12 +14,46 @@ import { PhoneCombobox } from "./_components/Combobox";
 import ShareButton from "./_components/ShareButton";
 import { Suspense } from "react";
 import PhoneCardSkeleton from "./_components/PhoneCardSkeleton";
+import { Metadata, ResolvingMetadata } from "next";
 
 type PhoneWithColors = Tables<"phones"> & {
   phone_colors: Tables<"phone_colors">[];
 };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+// export const metadata: Metadata = {
+//   title: "I-Phone 비교하기",
+//   description: " I-Phone을 비교 해보세요",
+// };
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: {
+    primary?: string;
+    secondary?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+  };
+}): Promise<Metadata> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("phones").select("*, phone_colors(*)");
+  if (!data) throw new Error("No data found");
+
+  const primaryPhone =
+    data.find((phone) => phone.name === searchParams.primary) || data[0];
+  const secondaryPhone =
+    data.find((phone) => phone.name === searchParams.secondary) || data[0];
+
+  const primaryColor =
+    searchParams.primaryColor || primaryPhone.phone_colors[0].name;
+  const secondaryColor =
+    searchParams.secondaryColor || secondaryPhone.phone_colors[0].name;
+
+  return {
+    title: `${primaryPhone.name} ${primaryColor} 모델과 ${secondaryPhone.name} ${secondaryColor} 모델 비교하기`,
+    description: `${primaryPhone.name} ${primaryColor} 모델과 ${secondaryPhone.name} ${secondaryColor} 모델을 비교해보세요`,
+  };
+}
 
 const PhoneCard = async ({
   order,
@@ -32,7 +66,6 @@ const PhoneCard = async ({
   selectedPhoneName: string;
   selectedColor: string;
 }) => {
-  await sleep(1000);
   const options = phones.map((phone) => ({
     value: phone.name!,
     label: `${phone.name} Phone`,
